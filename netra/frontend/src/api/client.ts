@@ -1,4 +1,16 @@
-const API_BASE = (import.meta.env.VITE_API_BASE_URL || '/api/v1').replace(/\/$/, '');
+const getApiBase = () => {
+  let base = (import.meta.env.VITE_API_BASE_URL || '').trim().replace(/\/$/, '');
+  if (!base) {
+    return '/api/v1';
+  }
+  // If the user specified a root URL (e.g. https://netra-ai-7hdu.onrender.com), ensure /api/v1 is appended
+  if (!base.endsWith('/api/v1') && !base.includes('/api/v1')) {
+    base = `${base}/api/v1`;
+  }
+  return base;
+};
+
+const API_BASE = getApiBase();
 
 export interface UserProfile {
   id: number;
@@ -222,14 +234,12 @@ class ApiClient {
     });
 
     if (response.status === 401) {
-      if (!token?.startsWith('demo_')) {
-        localStorage.removeItem('netra_token');
-        localStorage.removeItem('netra_user');
-        if (!window.location.pathname.includes('/login') && window.location.pathname !== '/') {
-          window.location.href = '/login';
-        }
+      localStorage.removeItem('netra_token');
+      localStorage.removeItem('netra_user');
+      if (!window.location.pathname.includes('/login') && window.location.pathname !== '/') {
+        window.location.href = '/login';
       }
-      throw new Error('Unauthorized');
+      throw new Error('Session expired or unauthorized. Please log in.');
     }
 
     if (!response.ok) {

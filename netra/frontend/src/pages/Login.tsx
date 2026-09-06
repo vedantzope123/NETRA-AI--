@@ -25,11 +25,7 @@ export const Login: React.FC = () => {
     try {
       if (isRegister) {
         // Register then login
-        await fetch('/api/v1/auth/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password, full_name: fullName || 'Investigator Officer', role }),
-        });
+        await api.register({ email, password, full_name: fullName || 'Investigator Officer', role });
       }
       await login(email, password);
       navigate('/dashboard');

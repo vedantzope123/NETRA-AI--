@@ -356,8 +356,9 @@ class ApiClient {
   }
 
   // Alerts
-  async getAlerts(caseId: string = 'CASE-26189') {
-    return this.request<AlertItem[]>(`/alerts?case_id=${caseId}`);
+  async getAlerts(caseId?: string) {
+    const url = caseId && caseId !== 'ALL' ? `/alerts?case_id=${encodeURIComponent(caseId)}` : '/alerts';
+    return this.request<AlertItem[]>(url);
   }
 
   // Dossier & Cross-Case Nexus

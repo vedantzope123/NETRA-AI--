@@ -5,31 +5,36 @@ from typing import Optional, Dict, Any
 from app.core.config import settings
 
 def call_gemini_generate(prompt: str, system_instruction: Optional[str] = None) -> Optional[str]:
-    api_key = settings.GEMINI_API_KEY or os.getenv("GEMINI_API_KEY", "AQ.Ab8RN6I7kQz5DsYZ06LPxoFEIBD3pmNDcGGVoZ9v0qSYh_sPlw")
+    api_key = os.getenv("GEMINI_API_KEY") or settings.GEMINI_API_KEY
     if not api_key:
         return None
         
-    # Primary: Direct REST call with Google Generative Language v1beta gemini-2.5-flash
-    try:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
-        payload: Dict[str, Any] = {
-            "contents": [{"parts": [{"text": prompt}]}]
-        }
-        if system_instruction:
-            payload["systemInstruction"] = {"parts": [{"text": system_instruction}]}
-            
-        with httpx.Client(timeout=15.0) as client:
-            res = client.post(url, json=payload)
-            if res.status_code == 200:
-                data = res.json()
-                candidates = data.get("candidates", [])
-                if candidates and "content" in candidates[0]:
-                    parts = candidates[0]["content"].get("parts", [])
-                    if parts and "text" in parts[0]:
-                        return parts[0]["text"]
-            else:
-                print(f"[Gemini REST Warning] Status {res.status_code}: {res.text[:150]}")
-    except Exception as exc:
-        print(f"[Gemini REST Exception] {exc}")
+    models_to_try = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-2.5-flash"]
+    payload: Dict[str, Any] = {
+        "contents": [{"parts": [{"text": prompt}]}]
+    }
+    if system_instruction:
+        payload["systemInstruction"] = {"parts": [{"text": system_instruction}]}
+
+    for model_name in models_to_try:
+        try:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
+            with httpx.Client(timeout=10.0) as client:
+                res = client.post(url, json=payload)
+                if res.status_code == 200:
+                    data = res.json()
+                    candidates = data.get("candidates", [])
+                    if candidates and "content" in candidates[0]:
+                        parts = candidates[0]["content"].get("parts", [])
+                        if parts and "text" in parts[0]:
+                            return parts[0]["text"]
+                elif res.status_code == 429:
+                    print(f"[Gemini Quota Exceeded on {model_name}], falling back to Netra+ reasoning engine.")
+                    break
+                else:
+                    print(f"[Gemini Warning] Model {model_name} returned {res.status_code}")
+        except Exception as exc:
+            print(f"[Gemini Exception on {model_name}] {exc}")
 
     return None
+

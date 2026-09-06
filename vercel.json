@@ -4,7 +4,6 @@
   "outputDirectory": "netra/frontend/dist",
   "installCommand": "npm --prefix netra/frontend install",
   "framework": "vite",
-  "cleanUrls": true,
   "rewrites": [
     {
       "source": "/(.*)",

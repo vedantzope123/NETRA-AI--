@@ -1,8 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "cd netra/frontend && npm run build",
+  "buildCommand": "npm --prefix netra/frontend run build",
   "outputDirectory": "netra/frontend/dist",
-  "installCommand": "cd netra/frontend && npm install",
+  "installCommand": "npm --prefix netra/frontend install",
   "framework": "vite",
   "cleanUrls": true,
   "rewrites": [
